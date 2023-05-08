@@ -1,6 +1,10 @@
 import os
 from params_proto.neo_hyper import Sweep
 
+import sys
+sys.path.insert(1, os.path.join(sys.path[0], '../../'))
+
+
 if __name__ == '__main__':
     from rl import Args, main
 

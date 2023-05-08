@@ -5,6 +5,11 @@ import gym
 import numpy as np
 import torch
 
+import sys
+import os
+sys.path.insert(1, os.path.join(sys.path[0], '../../'))
+
+
 from rl import Args
 from rl.agent import Agent
 from rl.algo.core import Algo

@@ -9,6 +9,14 @@ from torch.distributions.normal import Normal
 from rl.normalizer import Normalizer
 from rl.utils import net_utils
 
+import sys
+import os
+sys.path.insert(1, os.path.join(sys.path[0], '../../../'))
+print(os.path)
+
+from drqv2_crff_dir import Encoder
+
+
 LOG_STD_MAX = 2
 LOG_STD_MIN = -20
 
@@ -71,11 +79,17 @@ class StateAsymMetricCritic(nn.Module):
         obses, goals = pi_inputs[:, :self.obs_dim], pi_inputs[:, self.obs_dim:]
 
         # f(s, a)
-        f_embeds = self.f_embed(obses, actions)
+        #make CFF encoder and put f and phi through encoder before f_embed and phi_embed
+        conv_fourier_features = 1
+        scale = 1
+        self.encoder = Encoder(obses.shape, fourier_features=conv_fourier_features, scale=scale, rff=True)
+        self.encoder.train()
+        obs = self.encoder(obses.unsqueeze(0))
+
+        f_embeds = self.f_embed(obs, actions)
 
         # \varphi(f(s,a), g)
-        phi_embeds = self.state_phi_embed(obses, goals)
-        # phi_embeds = self.phi_embed(f_embeds, goals)
+        phi_embeds = self.state_phi_embed(self.encoder(obses.unsqueeze(0)), goals)
 
         # ||f(s, a) - \varphi(f(s, a), g)||
         embed_dist = torch.linalg.norm(f_embeds - phi_embeds, dim=-1)
@@ -84,8 +98,29 @@ class StateAsymMetricCritic(nn.Module):
 
         return q_values
 
+    # def forward(self, pi_inputs, actions):
+    #     # NOTE: assume pi_inputs to be concatenated in the order [obs, goal]
+    #     obses, goals = pi_inputs[:, :self.obs_dim], pi_inputs[:, self.obs_dim:]
+
+    #     print("OBS: ", obses.shape, actions.shape)
+
+    #     # f(s, a)
+    #     f_embeds = self.f_embed(obses, actions)
+
+    #     # \varphi(f(s,a), g)
+    #     phi_embeds = self.state_phi_embed(obses, goals)
+    #     # phi_embeds = self.phi_embed(f_embeds, goals)
+
+    #     # ||f(s, a) - \varphi(f(s, a), g)||
+    #     embed_dist = torch.linalg.norm(f_embeds - phi_embeds, dim=-1)
+
+    #     q_values = (-embed_dist).squeeze()
+
+    #     return q_values
+
     def f_embed(self, obses, actions):
         f_inputs = torch.cat([obses, actions / self.act_limit], dim=-1)
+        print("f_inputs shape: ", f_inputs.shape)
         f_embeds = self.f(f_inputs)
         return f_embeds
 
