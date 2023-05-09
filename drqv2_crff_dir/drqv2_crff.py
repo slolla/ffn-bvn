@@ -25,13 +25,15 @@ class Encoder(nn.Module):
         self.rff = rff
 
         if self.rff:
-            self.convnet = nn.Sequential(clff_modules.CLFF(obs_shape[0], fourier_features, scale=scale),
-                                         nn.Conv2d(fourier_features, 32, 3, stride=2),
-                                         nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
-                                         nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
+            # self.convnet = nn.Sequential(clff_modules.CLFF(obs_shape, fourier_features, scale=scale),
+            #                              nn.Conv2d(fourier_features, 32, 3, stride=2),
+            #                              nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
+            #                              nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
+            #                              nn.ReLU())
+            self.convnet = nn.Sequential(clff_modules.CLFF(obs_shape, fourier_features, scale=scale),
                                          nn.ReLU())
         else:
-            self.convnet = nn.Sequential(nn.Conv2d(obs_shape[0], 32, 3, stride=2),
+            self.convnet = nn.Sequential(nn.Conv2d(obs_shape, 32, 3, stride=2),
                                         nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
                                         nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
                                         nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
@@ -41,8 +43,6 @@ class Encoder(nn.Module):
 
     def forward(self, obs):
         obs = obs / 255.0 - 0.5
-        print("obs: ", obs.shape)
         h = self.convnet(obs)
-        print("H: ", h.shape)
         h = h.view(h.shape[0], -1)
         return h

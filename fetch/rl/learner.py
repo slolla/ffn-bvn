@@ -7,6 +7,15 @@ import os.path as osp
 from rl.utils import mpi_utils
 
 
+import sys
+import os
+sys.path.insert(1, os.path.join(sys.path[0], '../../../'))
+print(os.path)
+
+from drqv2_crff_dir import Encoder
+
+
+
 def to_numpy(x):
     return x.detach().float().cpu().numpy()
 
@@ -29,22 +38,40 @@ class Learner:
         self.logger = logger
         self.args = args
 
+        #encoder:
+        conv_fourier_features = 1024
+        scale = 1
+        self.encoder = Encoder(1024, fourier_features=conv_fourier_features, scale=scale, rff=True)
+
+
         self.optim_q = Adam(agent.critic.parameters(), lr=args.lr_critic)
         self.optim_pi = Adam(agent.actor.parameters(), lr=args.lr_actor)
+        self.encoder_opt = torch.optim.Adam(self.encoder.parameters(), lr=args.lr_actor)
 
         self._save_file = str(name) + '.pt'
 
         self.loss_fn = {'l1': nn.SmoothL1Loss(),
                         'l2': nn.MSELoss()}[self.args.critic_loss_fn]
 
+    def encoder_preprocess(self, o):
+        obs = torch.as_tensor(o).float().unsqueeze(0).unsqueeze(0)
+        obs = self.encoder(obs).detach().numpy()
+        obs = obs.transpose()
+        return obs
+
     def critic_loss(self, batch):
         o, a, o2, r, bg = batch['ob'], batch['a'], batch['o2'], batch['r'], batch['bg']
+
         r = self.agent.to_tensor(r.flatten())
         r_ag_ag2 = self.agent.to_tensor(batch['r_ag_ag2'].flatten())
         r_future_ag = self.agent.to_tensor(batch['r_future_ag'].flatten())
 
         ag, ag2, future_ag, offset = batch['ag'], batch['ag2'], batch['future_ag'], batch['offset']
         offset = self.agent.to_tensor(offset.flatten())
+
+        #encode observations
+        o2 = self.encoder_preprocess(o2)
+        o = self.encoder_preprocess(o)
 
         with torch.no_grad():
             q_next, _ = self.agent.forward(o2, bg, q_target=True, pi_target=True)
@@ -60,6 +87,10 @@ class Learner:
         q_future = self.agent.get_qs(o, future_ag, a)
 
         loss_critic = loss_q
+
+        #encoder optim
+        self.encoder_opt.zero_grad(set_to_none=True)
+        self.encoder_opt.step()
 
         return loss_critic
 

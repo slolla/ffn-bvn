@@ -67,6 +67,7 @@ class StateAsymMetricCritic(nn.Module):
         self.goal_dim = env_params['goal']
 
         embed_dim = args.metric_embed_dim
+
         self.f = net_utils.mlp(
             [env_params['obs'] + env_params['action']] + [args.hid_size] * args.n_hids + [embed_dim],
             activation=args.activ)
@@ -79,17 +80,11 @@ class StateAsymMetricCritic(nn.Module):
         obses, goals = pi_inputs[:, :self.obs_dim], pi_inputs[:, self.obs_dim:]
 
         # f(s, a)
-        #make CFF encoder and put f and phi through encoder before f_embed and phi_embed
-        conv_fourier_features = 1
-        scale = 1
-        self.encoder = Encoder(obses.shape, fourier_features=conv_fourier_features, scale=scale, rff=True)
-        self.encoder.train()
-        obs = self.encoder(obses.unsqueeze(0))
-
-        f_embeds = self.f_embed(obs, actions)
+        f_embeds = self.f_embed(obses, actions)
 
         # \varphi(f(s,a), g)
-        phi_embeds = self.state_phi_embed(self.encoder(obses.unsqueeze(0)), goals)
+        phi_embeds = self.state_phi_embed(obses, goals)
+        # phi_embeds = self.phi_embed(f_embeds, goals)
 
         # ||f(s, a) - \varphi(f(s, a), g)||
         embed_dist = torch.linalg.norm(f_embeds - phi_embeds, dim=-1)
@@ -98,29 +93,8 @@ class StateAsymMetricCritic(nn.Module):
 
         return q_values
 
-    # def forward(self, pi_inputs, actions):
-    #     # NOTE: assume pi_inputs to be concatenated in the order [obs, goal]
-    #     obses, goals = pi_inputs[:, :self.obs_dim], pi_inputs[:, self.obs_dim:]
-
-    #     print("OBS: ", obses.shape, actions.shape)
-
-    #     # f(s, a)
-    #     f_embeds = self.f_embed(obses, actions)
-
-    #     # \varphi(f(s,a), g)
-    #     phi_embeds = self.state_phi_embed(obses, goals)
-    #     # phi_embeds = self.phi_embed(f_embeds, goals)
-
-    #     # ||f(s, a) - \varphi(f(s, a), g)||
-    #     embed_dist = torch.linalg.norm(f_embeds - phi_embeds, dim=-1)
-
-    #     q_values = (-embed_dist).squeeze()
-
-    #     return q_values
-
     def f_embed(self, obses, actions):
         f_inputs = torch.cat([obses, actions / self.act_limit], dim=-1)
-        print("f_inputs shape: ", f_inputs.shape)
         f_embeds = self.f(f_inputs)
         return f_embeds
 
@@ -324,7 +298,6 @@ class Agent(BaseAgent):
                     'sym_metric': SymMetricCritic,
                     'fsag_metric': FSAGMetricCritic,
                     'state_asym_metric': StateAsymMetricCritic}[args.critic_type]
-
         self.actor = Actor(env_params, args)
         self.critic = CriticCls(env_params, args)
 
@@ -393,6 +366,7 @@ class Agent(BaseAgent):
         q_net = self.critic_targ if q_target else self.critic
         a_net = self.actor_targ if pi_target else self.actor
         pis = a_net(inputs)
+
         return q_net(inputs, pis), pis
 
     def f(self, obses, actions):

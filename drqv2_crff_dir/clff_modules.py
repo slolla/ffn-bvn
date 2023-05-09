@@ -16,8 +16,6 @@ class CLFF(nn.Module):
             self.cff = nn.Conv2d(in_channel, out_channel // 2, kernel_size, stride=1)
         else:
             self.cff = nn.Conv2d(in_channel, out_channel, kernel_size, stride=1)
-        print("self.cff: ", self.cff)
-        print("kernel size: ", kernel_size)
         if init == "iso":
             nn.init.normal_(self.cff.weight, 0, scale / in_channel)
             nn.init.normal_(self.cff.bias, 0, 1)
@@ -29,9 +27,8 @@ class CLFF(nn.Module):
             nn.init.zeros_(self.cff.bias)
 
     def forward(self, x, **_):
-        # x = x.unsqueeze(0).permute((0, 2, 1, 3))
+        x = x.permute((3, 2, 0, 1))
         x = np.pi * self.cff(x)
-        print("forward clff: ", x.shape)
         if self.sincos:
             # Assumes x = (N, C, H, W)
             return torch.cat([torch.sin(x), torch.cos(x)], dim=1)
