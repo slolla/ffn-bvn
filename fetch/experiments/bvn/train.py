@@ -1,5 +1,7 @@
 import os
-from params_proto.neo_hyper import Sweep
+from params_proto.hyper import Sweep
+import pyglet
+pyglet.options["headless"] = True
 
 import sys
 sys.path.insert(1, os.path.join(sys.path[0], '../../'))
@@ -20,6 +22,7 @@ if __name__ == '__main__':
                 Args.env_name = ['FetchReach-v1']
                 Args.n_workers = [2]
                 Args.n_epochs = [50]
+                Args.record_video = [False]
 
             Args.seed = [100]
             Args.metric_embed_dim = [16,]

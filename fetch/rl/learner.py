@@ -70,8 +70,8 @@ class Learner:
         offset = self.agent.to_tensor(offset.flatten())
 
         #encode observations
-        o2 = self.encoder_preprocess(o2)
-        o = self.encoder_preprocess(o)
+        #o2 = self.encoder_preprocess(o2)
+        #o = self.encoder_preprocess(o)
 
         with torch.no_grad():
             q_next, _ = self.agent.forward(o2, bg, q_target=True, pi_target=True)

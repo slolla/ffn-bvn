@@ -70,10 +70,11 @@ class BaseAlgo:
                 ag = observation['achieved_goal']
                 ag_changed = np.abs(self.reward_func(ag_origin, ag, None))
                 self.logger.store_key_value('test/AgChangeRatio', np.mean(ag_changed))
-
+                '''
                 if video_path and n_test == 0:
                     img = env.render("rgb_array", width=200, height=200)
                     frames.append(img)
+                '''
 
             for per_env_info in [info] if isinstance(info, dict) else info:
                 total_trial_count += 1

@@ -1,5 +1,5 @@
 import sys
-from params_proto.neo_proto import ParamsProto, Flag, Proto, PrefixProto
+from params_proto.proto import ParamsProto, Flag, Proto, PrefixProto
 
 
 class Args(PrefixProto):
