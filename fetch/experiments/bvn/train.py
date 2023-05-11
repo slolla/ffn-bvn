@@ -17,11 +17,13 @@ if __name__ == '__main__':
 
         with sweep.product:
             with sweep.zip:
+                # Args.env_name = ['FetchReach-v1', 'FetchPush-v1', 'FetchPickAndPlace-v1', 'FetchSlide-v1']
                 Args.env_name = ['FetchReach-v1']
-                Args.n_workers = [2]
-                Args.n_epochs = [50]
 
-            Args.seed = [100]
+                Args.n_workers = [2, 8, 16, 20]
+                Args.n_epochs = [50, 150, 200, 500]
+
+            Args.seed = [100, 200, 300, 400, 500]
             Args.metric_embed_dim = [16,]
 
     for i, deps in sweep.items():

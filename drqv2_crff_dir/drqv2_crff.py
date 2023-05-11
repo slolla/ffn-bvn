@@ -30,8 +30,9 @@ class Encoder(nn.Module):
             #                              nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
             #                              nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
             #                              nn.ReLU())
-            self.convnet = nn.Sequential(clff_modules.CLFF(obs_shape, fourier_features, scale=scale),
+            self.convnet = nn.Sequential(clff_modules.RFF(obs_shape, fourier_features, scale=scale),
                                          nn.ReLU())
+            
         else:
             self.convnet = nn.Sequential(nn.Conv2d(obs_shape, 32, 3, stride=2),
                                         nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
