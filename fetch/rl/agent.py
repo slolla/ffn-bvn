@@ -26,9 +26,9 @@ class Actor(nn.Module):
         super().__init__()
         self.act_limit = env_params['action_max']
 
-        # input_dim = env_params['obs'] + env_params['goal']
+        input_dim = env_params['obs'] + env_params['goal']
         self.net = net_utils.mlp(
-            [args.fourier_dim] + [args.hid_size] * args.n_hids,
+            [input_dim] + [args.hid_size] * args.n_hids,
             activation=args.activ, output_activation=args.activ)
         self.mean = nn.Linear(args.hid_size, env_params['action'])
 
@@ -44,9 +44,8 @@ class Critic(nn.Module):
         super().__init__()
         self.act_limit = env_params['action_max']
 
-        # input_dim = env_params['obs'] + env_params['goal'] + env_params['action']
         self.net = net_utils.mlp(
-            [args.fourier_dim + env_params['action']] + [args.hid_size] * args.n_hids + [1],
+            [env_params['obs'] + env_params['goal'] + env_params['action']] + [args.hid_size] * args.n_hids + [1],
             activation=args.activ)
 
     def forward(self, pi_inputs, actions):
@@ -299,14 +298,6 @@ class Agent(BaseAgent):
                     'fsag_metric': FSAGMetricCritic,
                     'state_asym_metric': StateAsymMetricCritic}[args.critic_type]
 
-        #encoder:
-        fourier_features = 100
-        scale = 1
-        input_fourier = env_params['obs'] + env_params['goal']
-        
-        self.encoder = Encoder(input_fourier, fourier_features=fourier_features, scale=scale, rff=True)
-        args.fourier_dim = fourier_features
-
         self.actor = Actor(env_params, args)
         self.critic = CriticCls(env_params, args)
 
@@ -348,9 +339,7 @@ class Agent(BaseAgent):
         if self.args.normalize_inputs:
             obs = self.o_normalizer.normalize(obs)
             goal = self.g_normalizer.normalize(goal)
-        inputs = self.to_tensor(np.concatenate([obs, goal], axis=-1))
-        f_inputs = self.encoder(inputs)
-        return f_inputs
+        return self.to_tensor(np.concatenate([obs, goal], axis=-1))
 
     def get_actions(self, obs, goal):
         obs, goal = self._preprocess_inputs(obs, goal)

@@ -40,7 +40,6 @@ class Learner:
 
         self.optim_q = Adam(agent.critic.parameters(), lr=args.lr_critic)
         self.optim_pi = Adam(agent.actor.parameters(), lr=args.lr_actor)
-        self.encoder_opt = torch.optim.Adam(self.agent.encoder.parameters(), lr=args.lr_actor)
 
         self._save_file = str(name) + '.pt'
 
@@ -94,13 +93,11 @@ class Learner:
     def update(self, batch):
         loss_critic = self.critic_loss(batch)
         self.optim_q.zero_grad()
-        self.encoder_opt.zero_grad(set_to_none=True)
         
         loss_critic.backward()
         # if mpi_utils.use_mpi():
         #     mpi_utils.sync_grads(self.agent.critic, scale_grad_by_procs=True)
         self.optim_q.step()
-        self.encoder_opt.step()
 
 
         for i in range(self.args.n_actor_optim_steps):

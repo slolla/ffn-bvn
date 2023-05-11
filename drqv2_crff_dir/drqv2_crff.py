@@ -25,11 +25,6 @@ class Encoder(nn.Module):
         self.rff = rff
 
         if self.rff:
-            # self.convnet = nn.Sequential(clff_modules.CLFF(obs_shape, fourier_features, scale=scale),
-            #                              nn.Conv2d(fourier_features, 32, 3, stride=2),
-            #                              nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
-            #                              nn.ReLU(), nn.Conv2d(32, 32, 3, stride=1),
-            #                              nn.ReLU())
             self.convnet = nn.Sequential(clff_modules.RFF(obs_shape, fourier_features, scale=scale),
                                          nn.ReLU())
             
