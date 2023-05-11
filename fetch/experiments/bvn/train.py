@@ -12,7 +12,7 @@ if __name__ == '__main__':
         Args.gamma = 0.99
         Args.clip_inputs = True
         Args.normalize_inputs = True
-        Args.critic_type = 'state_asym_metric'
+        Args.critic_type = 'td'
         Args.critic_loss_type = 'td'
 
         with sweep.product:
