@@ -9,12 +9,6 @@ from rl.utils import mpi_utils
 
 import sys
 import os
-sys.path.insert(1, os.path.join(sys.path[0], '../../../'))
-print(os.path)
-
-from drqv2_crff_dir import Encoder
-
-
 
 def to_numpy(x):
     return x.detach().float().cpu().numpy()
@@ -38,15 +32,10 @@ class Learner:
         self.logger = logger
         self.args = args
 
-        #encoder:
-        conv_fourier_features = 1024
-        scale = 1
-        self.encoder = Encoder(1024, fourier_features=conv_fourier_features, scale=scale, rff=True)
-
 
         self.optim_q = Adam(agent.critic.parameters(), lr=args.lr_critic)
         self.optim_pi = Adam(agent.actor.parameters(), lr=args.lr_actor)
-        self.encoder_opt = torch.optim.Adam(self.encoder.parameters(), lr=args.lr_actor)
+        self.encoder_opt = torch.optim.Adam(self.agent.encoder.parameters(), lr=args.lr_actor)
 
         self._save_file = str(name) + '.pt'
 
@@ -55,7 +44,7 @@ class Learner:
 
     def encoder_preprocess(self, o):
         obs = torch.as_tensor(o).float().unsqueeze(0).unsqueeze(0)
-        obs = self.encoder(obs).detach().numpy()
+        obs = self.agent.encoder(obs).detach().numpy()
         obs = obs.transpose()
         return obs
 

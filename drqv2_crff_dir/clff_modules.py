@@ -13,9 +13,9 @@ class CLFF(nn.Module):
         self.sincos = sincos
         self.scale = scale
         if self.sincos:
-            self.cff = nn.Conv2d(in_channel, out_channel // 2, kernel_size, stride=1)
+            self.cff = nn.Conv1d(in_channel, out_channel // 2, kernel_size, stride=1)
         else:
-            self.cff = nn.Conv2d(in_channel, out_channel, kernel_size, stride=1)
+            self.cff = nn.Conv1d(in_channel, out_channel, kernel_size, stride=1)
         if init == "iso":
             nn.init.normal_(self.cff.weight, 0, scale / in_channel)
             nn.init.normal_(self.cff.bias, 0, 1)
@@ -27,7 +27,9 @@ class CLFF(nn.Module):
             nn.init.zeros_(self.cff.bias)
 
     def forward(self, x, **_):
-        x = x.permute((3, 2, 0, 1))
+        
+        x = x.transpose(1, 0)
+        print(x.shape)
         x = np.pi * self.cff(x)
         if self.sincos:
             # Assumes x = (N, C, H, W)

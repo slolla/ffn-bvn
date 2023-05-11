@@ -26,7 +26,8 @@ class Actor(nn.Module):
         super().__init__()
         self.act_limit = env_params['action_max']
 
-        input_dim = env_params['obs'] + env_params['goal']
+        #input_dim = env_params['obs'] + env_params['goal']
+        input_dim = args.repr_dim
         self.net = net_utils.mlp(
             [input_dim] + [args.hid_size] * args.n_hids,
             activation=args.activ, output_activation=args.activ)
@@ -44,7 +45,8 @@ class Critic(nn.Module):
         super().__init__()
         self.act_limit = env_params['action_max']
 
-        input_dim = env_params['obs'] + env_params['goal'] + env_params['action']
+        #input_dim = env_params['obs'] + env_params['goal'] + env_params['action']
+        input_dim = args.repr_dim
         self.net = net_utils.mlp(
             [input_dim] + [args.hid_size] * args.n_hids + [1],
             activation=args.activ)
@@ -298,8 +300,16 @@ class Agent(BaseAgent):
                     'sym_metric': SymMetricCritic,
                     'fsag_metric': FSAGMetricCritic,
                     'state_asym_metric': StateAsymMetricCritic}[args.critic_type]
+        
+        #encoder:
+        conv_fourier_features = 1024
+        scale = 1
+        self.encoder = Encoder(env_params['obs'] + env_params['goal'], fourier_features=conv_fourier_features, scale=scale, rff=True)
+        args.repr_dim = self.encoder.repr_dim
         self.actor = Actor(env_params, args)
         self.critic = CriticCls(env_params, args)
+        
+        
 
         # if mpi_utils.use_mpi():
         #     mpi_utils.sync_networks(self.actor)
@@ -339,7 +349,9 @@ class Agent(BaseAgent):
         if self.args.normalize_inputs:
             obs = self.o_normalizer.normalize(obs)
             goal = self.g_normalizer.normalize(goal)
-        return self.to_tensor(np.concatenate([obs, goal], axis=-1))
+        inputs=  self.to_tensor(np.concatenate([obs, goal], axis=-1))
+        fourier_features = self.encoder(inputs)
+        return fourier_features
 
     def get_actions(self, obs, goal):
         obs, goal = self._preprocess_inputs(obs, goal)
@@ -350,24 +362,24 @@ class Agent(BaseAgent):
 
     def get_pis(self, obs, goal):
         obs, goal = self._preprocess_inputs(obs, goal)
-        inputs = self._process_inputs(obs, goal)
-        pis = self.actor(inputs)
+        fourier_features = self._process_inputs(obs, goal)
+        pis = self.actor(fourier_features)
         return pis
 
     def get_qs(self, obs, goal, actions, **kwargs):
         obs, goal = self._preprocess_inputs(obs, goal)
-        inputs = self._process_inputs(obs, goal)
+        fourier_features = self._process_inputs(obs, goal)
         actions = self.to_tensor(actions)
-        return self.critic(inputs, actions, **kwargs)
+        return self.critic(fourier_features, actions, **kwargs)
 
     def forward(self, obs, goal, q_target=False, pi_target=False):
         obs, goal = self._preprocess_inputs(obs, goal)
         inputs = self._process_inputs(obs, goal)
         q_net = self.critic_targ if q_target else self.critic
         a_net = self.actor_targ if pi_target else self.actor
-        pis = a_net(inputs)
+        pis = a_net(fourier_features)
 
-        return q_net(inputs, pis), pis
+        return q_net(fourier_features, pis), pis
 
     def f(self, obses, actions):
         obses = self._preprocess_obs(obses)
