@@ -300,7 +300,7 @@ class Agent(BaseAgent):
                     'state_asym_metric': StateAsymMetricCritic}[args.critic_type]
 
         #encoder:
-        fourier_features = 10
+        fourier_features = 100
         scale = 1
         input_fourier = env_params['obs'] + env_params['goal']
         

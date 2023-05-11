@@ -72,10 +72,6 @@ class Learner:
 
         loss_critic = loss_q
 
-        #encoder optim
-        self.encoder_opt.zero_grad(set_to_none=True)
-        self.encoder_opt.step()
-
         return loss_critic
 
     def actor_loss(self, batch):
@@ -98,10 +94,14 @@ class Learner:
     def update(self, batch):
         loss_critic = self.critic_loss(batch)
         self.optim_q.zero_grad()
+        self.encoder_opt.zero_grad(set_to_none=True)
+        
         loss_critic.backward()
         # if mpi_utils.use_mpi():
         #     mpi_utils.sync_grads(self.agent.critic, scale_grad_by_procs=True)
         self.optim_q.step()
+        self.encoder_opt.step()
+
 
         for i in range(self.args.n_actor_optim_steps):
             loss_actor = self.actor_loss(batch)
