@@ -23,9 +23,9 @@ if __name__ == '__main__':
                 Args.n_workers = [2]
                 Args.n_epochs = [100]
 
-            Args.seed = [300]
+            Args.seed = [100, 200, 300, 400, 500]
             Args.metric_embed_dim = [16,]
 
     for i, deps in sweep.items():
-      os.environ["ML_LOGGER_ROOT"] = f"{os.getcwd()}/results/bvn/{deps['Args.env_name']}/{deps['Args.critic_type']}"
+      os.environ["ML_LOGGER_ROOT"] = f"{os.getcwd()}/results/bvn/{deps['Args.env_name']}/{deps['Args.critic_type']}/fourier=0.5"
       main(deps)

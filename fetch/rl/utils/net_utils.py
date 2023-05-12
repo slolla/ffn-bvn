@@ -90,7 +90,7 @@ def mlp(sizes, activation='tanh', output_activation='identity'):
         return nn.Identity()
         
     scale = 1.0
-    fourier_features = 40
+    fourier_features = int(sizes[0]*0.5)
     layers += [RFF(sizes[0], fourier_features, scale=scale)]
     sizes[0] = fourier_features
     for j in range(n_layer):
@@ -103,6 +103,21 @@ def mlp(sizes, activation='tanh', output_activation='identity'):
             activ()]
     print(layers)
     return nn.Sequential(*layers)
+
+# def mlp(sizes, activation='tanh', output_activation='identity'):
+#     layers = []
+#     n_layer = len(sizes) - 1
+#     if n_layer <= 0:
+#         return nn.Identity()
+#     for j in range(n_layer):
+#         if j == n_layer - 1:
+#             activ = get_activ(output_activation)
+#         else:
+#             activ = get_activ(activation)
+#         layers += [
+#             nn.Linear(sizes[j], sizes[j + 1]),
+#             activ()]
+#     return nn.Sequential(*layers)
 
 
 def set_requires_grad(net, allow_grad=True):
